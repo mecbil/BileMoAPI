@@ -9,17 +9,15 @@ Environnement
     PHP 7.3
     Architecture MVC
     Programmation Orientée Objet
-    Bootstrap 5
-    MySQL
-    jQuery
+
 
 Installation :
 
-Pour utiliser ce Site, il faut suivre les étapes suivantes :
+Pour utiliser cette api, il faut suivre les étapes suivantes :
 
     Télécharger 
 
-    git clone https://github.com/mecbil/SnowTricks.git
+    
 
     Installation
 
@@ -41,16 +39,14 @@ Pour utiliser ce Site, il faut suivre les étapes suivantes :
 
      Vous trouverez le fichier .env dans le répertoire racine. 
 
-    Créer une base de données nomée "snowtricks" et importer le fichier snowtricks.sql 
+    Créer une base de données nomée "bilemoapi" et importer le fichier bilemoapi.sql 
     situé à la racine du projet 
 
     Entrez vos informations d'identification de connexion à la base de données dans le fichier .env 
     situé à la racine du projet
 
-         Remplacez la ligne 22 par : MAILER_DSN=smtp://localhost:1025
-         Remplacez la ligne 30 par : DATABASE_URL="mysql://root@127.0.0.1:3306/snowtricks?serverVersion=5.7"
+         Remplacez la ligne 30 par : DATABASE_URL="mysql://root@127.0.0.1:3306/bilemoapi?serverVersion=5.7"
     
-     N'oubliez pas d'utiliser download Mail Hog et de l'utiliser 
 
     Amusez-vous avec ce Site !
 
@@ -76,19 +72,14 @@ To use this Site, you must follow this steps :
 
     You will find the .env file in the root directory.
 
-    Create a database named 'snowtricks "and import the snowtricks.sql file 
+    Create a database named 'bilemoapi"and import the bilemoapi.sql file 
     located at the root of the project
 
     Enter your database connection credentials in the .env file located at 
     the root of the project
 
-        Change line 22 to : MAILER_DSN=smtp://localhost:1025
-        Change line 30 to : DATABASE_URL="mysql://root@127.0.0.1:3306/snowtricks?serverVersion=5.7"
+        Change line 30 to : DATABASE_URL="mysql://root@127.0.0.1:3306/bilemoapi?serverVersion=5.7"
     
-    Don't forget to use download Mail Hog and to use it
-
-        The email address to intercept emails: http://127.0.0.1:8025
-
 
     Have fun using this Site !
 
