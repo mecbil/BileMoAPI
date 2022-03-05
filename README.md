@@ -76,4 +76,3 @@ To use this Site, you must follow this steps :
         Change line 30 to : DATABASE_URL="mysql://root@127.0.0.1:3306/bilemoapi?serverVersion=5.7"
     
     Have fun using this Site !
-
