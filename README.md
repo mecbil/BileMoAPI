@@ -15,10 +15,6 @@ Installation :
 
 Pour utiliser cette api, il faut suivre les étapes suivantes :
 
-    Télécharger 
-
-    
-
     Installation
 
      1 - Installer Compositeur
@@ -47,7 +43,6 @@ Pour utiliser cette api, il faut suivre les étapes suivantes :
 
          Remplacez la ligne 30 par : DATABASE_URL="mysql://root@127.0.0.1:3306/bilemoapi?serverVersion=5.7"
     
-
     Amusez-vous avec ce Site !
 
 To use this Site, you must follow this steps :
@@ -80,6 +75,5 @@ To use this Site, you must follow this steps :
 
         Change line 30 to : DATABASE_URL="mysql://root@127.0.0.1:3306/bilemoapi?serverVersion=5.7"
     
-
     Have fun using this Site !
 
