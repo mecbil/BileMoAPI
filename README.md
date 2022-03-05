@@ -10,7 +10,6 @@ Environnement
     Architecture MVC
     Programmation Orientée Objet
 
-
 Installation :
 
 Pour utiliser cette api, il faut suivre les étapes suivantes :
