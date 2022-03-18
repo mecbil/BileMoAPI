@@ -2,7 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Products;
 use OpenApi\Annotations as OA;
 use App\Repository\ProductsRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
