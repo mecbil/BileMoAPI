@@ -31,9 +31,9 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/{id}", name="app_user", methods={"GET"})
      */
-    public function sowOneUser(UsersRepository $UsersRepository): Response
+    public function sowOneUser($id, UsersRepository $UsersRepository): Response
     {
-        $product = $UsersRepository->findAll();
+        $product = $UsersRepository->find($id);
         
         $response = $this->json($product, 200, [],[]);
 
