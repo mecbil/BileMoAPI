@@ -11,7 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+// use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ClientController extends AbstractController
@@ -54,7 +55,7 @@ class ClientController extends AbstractController
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
     public function addUser(Request $request, SerializerInterface $serializer, 
-    EntityManagerInterface $em, UserPasswordEncoderInterface $encoder, ValidatorInterface $validator): Response
+    EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
         // Obtenir les informations
         $jsonRecu = $request->getContent();
@@ -71,7 +72,7 @@ class ClientController extends AbstractController
         }
 
         // encoder le mot de pass
-        $encoded = $encoder->encodePassword($user, $user->getPassword());
+        $encoded = $encoder->hashPassword($user, $user->getPassword());
         $user->setPassword($encoded);
 
         // enregistrer dans la BD
