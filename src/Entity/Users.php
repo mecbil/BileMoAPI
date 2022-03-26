@@ -5,9 +5,15 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
- * @ORM\Entity(repositoryClass=UsersRepository::class)
+ * @ORM\Entity(repositoryClass="App\Repository\UsersRepository")
+ * @UniqueEntity(
+ *     fields={"email"},
+ *     message="Cette Email est {{ value }} dejà utilisé."
+ * )
  */
 class Users implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -20,16 +26,24 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
+     * @Assert\NotBlank(message = "Veuillez compléter ce champ.")
+     * @Assert\Email(
+     *     message = "L'e-mail {{ value }} n'est pas un e-mail valide. "
+     * )
      */
     private $email;
 
     /**
      * @ORM\Column(type="json")
      */
-    private $roles = [];
+    private $roles = ['ROLE_USER'];
 
     /**
      * @var string The hashed password
+     * @Assert\Regex(
+     *     pattern="/^(?=.*[a-z])(?=.*\d).{8,}$/i",
+     *     message="Votre mot de passe doit avoir au moin -(08) Caractères- (01) chiffre- (01) caractère special"
+     * )
      * @ORM\Column(type="string")
      */
     private $password;
