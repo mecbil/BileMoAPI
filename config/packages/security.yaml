@@ -40,8 +40,12 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/api/doc, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        # - { path: ^/, roles: ROLE_USER }
+        - { path: ^/api/doc, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/connect/google, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/api/users, roles: ROLE_ADMIN }
+        - { path: ^/api/user, roles: ROLE_ADMIN }
+        - { path: ^/api/products, roles: ROLE_USER}
+        - { path: ^/api/product, roles: ROLE_USER}
         # - { path: ^/admin, roles: ROLE_ADMIN }
         # - { path: ^/profile, roles: ROLE_USER }
 
