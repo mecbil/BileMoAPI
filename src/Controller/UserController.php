@@ -14,6 +14,9 @@ class UserController extends AbstractController
      * 
      * @OA\Tag(name="Utilisateur")
      * @OA\Tag(name="Client")
+     * @OA\Get(
+     *      summary="Liste des produits",
+     * )
      * @OA\Response(
      *     response=200,
      *     description="Retourne la liste des produits",
@@ -37,6 +40,9 @@ class UserController extends AbstractController
      * 
      * @OA\Tag(name="Utilisateur")
      * @OA\Tag(name="Client")
+     * @OA\Get(
+     *      summary="Détail d'un produit",
+     * )
      * 
      * @OA\Response(
      *     response=200,
