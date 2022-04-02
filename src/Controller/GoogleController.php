@@ -7,7 +7,7 @@ use Symfony\Component\Security\Core\Security;
 use Symfony\Component\Routing\Annotation\Route;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
+// use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 
 class GoogleController extends AbstractController
 {
@@ -39,13 +39,9 @@ class GoogleController extends AbstractController
     }
 
     /**
-     * After going to Google, you're redirected back here
-     * because this is the "redirect_route" you configured
-     * in config/packages/knpu_oauth2_client.yaml
-     *
      * @Route("/", name="connecte")
      */
-    public function login()
+    public function home()
     {
         return $this->redirect('/api/doc');
     }
