@@ -7,7 +7,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @ORM\Entity(repositoryClass=ClientsRepository::class)
+ * @ORM\Entity(repositoryClass="App\Repository\ClientsRepository")
  */
 class Clients implements UserInterface, PasswordAuthenticatedUserInterface
 {
