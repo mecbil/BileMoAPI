@@ -2,8 +2,10 @@
 
 namespace App\Security;
 
+use App\Entity\Clients;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Entity\Users; // your user entity
+use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\RouterInterface;
@@ -49,10 +51,15 @@ class GoogleAuthenticator extends OAuth2Authenticator
                 $email = $googleUser->getEmail();
                 
                 // 1) have they logged in with Google before? Easy!
-                $existingUser = $this->entityManager->getRepository(Users::class)->findOneBy(['email' => $email]);
+                $existingUser1 = $this->entityManager->getRepository(Users::class)->findOneBy(['email' => $email]);
+                $existingUser2 = $this->entityManager->getRepository(Clients::class)->findOneBy(['email' => $email]);
 
-                if ($existingUser) {
-                    return $existingUser;
+                if ($existingUser1) {
+                    return $existingUser1;
+                    // dd($existingUser1);
+                } 
+                if ($existingUser2) {
+                    return $existingUser2;
                 }
 
         //         // 2) do we have a matching user by email?
