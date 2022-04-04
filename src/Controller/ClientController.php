@@ -68,7 +68,7 @@ class ClientController extends AbstractController
     public function addUser(Request $request, SerializerInterface $serializer, 
     EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
-        // Obtenir les informations
+        // Obtenir les informations saisies
         $jsonRecu = $request->getContent();
 
         try{
@@ -141,4 +141,71 @@ class ClientController extends AbstractController
 
         return $response;
     }
+
+    /**
+     * 
+     * @OA\Tag(name="Client")
+     * @OA\Put(
+     *      summary="Editer un utilisateur",
+     * )
+     * 
+     * 
+     * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
+     */
+    public function editUser($id, Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine,
+    EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
+    {
+        $repoUser = $doctrine->getRepository(Users::class);
+        $user = $repoUser->find($id);
+ 
+        // Utilisateur non trouvé
+        
+        if (!$user) {
+
+            $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
+            return $response;
+        }
+
+        // Utilisateur trouvé
+        // Obtenir les informations saisies
+        $jsonRecu = $request->getContent();
+
+        try{
+
+        // Deserializer les informations
+        $usermodified = $serializer->deserialize($jsonRecu, Users::class, 'json');
+        // dd($usermodified->getEmail());
+
+        $errors = $validator->validate($usermodified);
+
+        if (count($errors) > 0) {
+            return $this->json($errors, 400);
+        }
+
+        // encoder le mot de pass
+        $encoded = $encoder->hashPassword($usermodified, $usermodified->getPassword());
+        // var_dump($user, $usermodified);
+        $user->setPassword($encoded);
+        $user->setEmail($usermodified->getEmail());
+
+
+
+        // enregistrer dans la BD
+        $em->persist($user);
+        $em->flush();
+
+        // Envoyer la reponse (cas  valide)
+        $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
+
+        return $response;
+
+        } catch(\Exception $e) {
+            return $this->json([
+                'status' => 400,
+                'message' => $e->getMessage()
+            ], 400);
+        }
+
+    }
+
 }
