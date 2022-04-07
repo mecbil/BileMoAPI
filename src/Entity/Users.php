@@ -34,9 +34,9 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     private $email;
 
     /**
-     * @ORM\Column(type="json")
+     *
      */
-    private $roles = ['ROLE_USER'];
+    private $roles = [];
 
     /**
      * @var string The hashed password
@@ -108,13 +108,6 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     public function getPassword(): string
     {
         return $this->password;
-    }
-
-    public function setPassword(string $password): self
-    {
-        $this->password = $password;
-
-        return $this;
     }
 
     /**
