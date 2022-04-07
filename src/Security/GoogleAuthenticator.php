@@ -51,15 +51,15 @@ class GoogleAuthenticator extends OAuth2Authenticator
                 $email = $googleUser->getEmail();
                 
                 // 1) have they logged in with Google before? Easy!
-                $existingUser1 = $this->entityManager->getRepository(Users::class)->findOneBy(['email' => $email]);
-                $existingUser2 = $this->entityManager->getRepository(Clients::class)->findOneBy(['email' => $email]);
+                $existingUser = $this->entityManager->getRepository(Users::class)->findOneBy(['email' => $email]);
+                $existingClient = $this->entityManager->getRepository(Clients::class)->findOneBy(['email' => $email]);
 
-                if ($existingUser1) {
-                    return $existingUser1;
+                if ($existingUser) {
+                    return $existingUser;
                     // dd($existingUser1);
                 } 
-                if ($existingUser2) {
-                    return $existingUser2;
+                if ($existingClient) {
+                    return $existingClient;
                 }
 
         //         // 2) do we have a matching user by email?
