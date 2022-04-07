@@ -5,6 +5,19 @@ nelmio_api_doc:
             description: 'Projet 7 - OpenClassRooms: Créez un web service exposant une API'
             version: 1.0.0
 
+        components:
+            securitySchemes:
+                Google:
+                    type: oauth2
+                    flows:
+                        authorizationCode:
+                            scopes: {}
+                            authorizationUrl: "/connect/google"
+
+        security:
+            - Google: []
+
+        
     areas: # to filter documented areas
         path_patterns:
             - /product
@@ -13,15 +26,3 @@ nelmio_api_doc:
         #     - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
         # host_patterns:
         #     - ^api\.
-
-    # - api_key:
-    #     type: apiKey
-    #     name: api_key
-    #     in: header
-    # - google:
-    #     type: oauth2
-    #     authorizationUrl: https://petstore.swagger.io/oauth/authorize
-    #     flow: implicit
-    #     scopes:
-    #     read:pets: read your pets
-    #     write:pets: modify pets in your account
