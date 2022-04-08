@@ -22,6 +22,10 @@ class UserController extends AbstractController
      *     description="Retourne la liste des produits",
      *)
      * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification requise",
+     *)
+     * @OA\Response(
      *     response=500,
      *     description="Retourne une erreur serveur",
      *)
@@ -29,6 +33,14 @@ class UserController extends AbstractController
      */
     public function showAllProduct(ProductsRepository $productsRepository): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_USER');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification requise', 401, [],[]);
+            return $response;
+        }
         $product = $productsRepository->findAll();
         
         $response = $this->json($product, 200, [],[]);
@@ -49,6 +61,10 @@ class UserController extends AbstractController
      *     description="Retourne le détail d'un produit",
      *)
      * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification requise",
+     *)
+     * @OA\Response(
      *     response=404,
      *     description="Retourn Produit non trouvé, ou pas de route si l'Id n'est pas donné",
      *)
@@ -56,6 +72,14 @@ class UserController extends AbstractController
      */
     public function sowOneProduct($id, ProductsRepository $product): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_USER');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification requise', 401, [],[]);
+            return $response;
+        }
         $product = $product->find($id);
 
         if ($product) {
