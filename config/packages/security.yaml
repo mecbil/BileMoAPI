@@ -7,7 +7,9 @@ security:
             algorithm: auto
         App\Entity\Clients:
             algorithm: auto
-
+    role_hierarchy:
+        ROLE_USER:      ROLE_USER
+        ROLE_ADMIN:    [ROLE_USER, ROLE_ADMIN]
 
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
@@ -46,12 +48,6 @@ security:
     access_control:
         - { path: ^/api/doc, roles: IS_AUTHENTICATED_ANONYMOUSLY }
         - { path: ^/connect/google, roles: IS_AUTHENTICATED_ANONYMOUSLY }
-        - { path: ^/api/users, roles: ROLE_ADMIN }
-        - { path: ^/api/user, roles: ROLE_ADMIN }
-        - { path: ^/api/products, roles: ROLE_USER}
-        - { path: ^/api/product, roles: ROLE_USER}
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:
     security:

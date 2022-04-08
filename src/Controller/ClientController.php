@@ -12,7 +12,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
-// use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -25,11 +24,31 @@ class ClientController extends AbstractController
      * @OA\Get(
      *      summary="Liste des utilisateurs",
      * )
+     * @OA\Response(
+     *     response=200,
+     *     description="Retourne la liste des utilisateurs",
+     * )
+     * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     * )
+     * @OA\Response(
+     *     response=500,
+     *     description="Retourne une erreur serveur",
+     * )
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
     public function showAllUser(UsersRepository $usersRepository): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            return $response;
+        }
         $product = $usersRepository->findAll();
         
         $response = $this->json($product, 200, [],[]);
@@ -43,11 +62,31 @@ class ClientController extends AbstractController
      * @OA\Get(
      *      summary="Détails d'un utilisateur",
      * )
+     * @OA\Response(
+     *     response=200,
+     *     description="Retourne le détail d'un utilisateur",
+     * )
+     * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     *)
+     * @OA\Response(
+     *     response=404,
+     *     description="Retourn utilisateur non trouvé, ou pas de route si l'Id n'est pas donné",
+     *)
      * 
      * @Route("/api/user/{id}", name="app_user", methods={"GET"})
      */
     public function showOneUser($id, UsersRepository $UsersRepository): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            return $response;
+        }
         $product = $UsersRepository->find($id);
         
         $response = $this->json($product, 200, [],[]);
@@ -61,13 +100,32 @@ class ClientController extends AbstractController
      * @OA\Post(
      *      summary="Ajout d'un utilisateur",
      * )
-     * 
+     * @OA\Response(
+     *     response=201,
+     *     description="Utilisateur ajouté avec succès",
+     * )
+     * @OA\Response(
+     *     response=400,
+     *     description="Erreurs de Syntaxe, ou erreurs SQL",
+     * )
+     * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     *)
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
     public function addUser(Request $request, SerializerInterface $serializer, 
     EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            return $response;
+        }
         // Obtenir les informations saisies
         $jsonRecu = $request->getContent();
 
@@ -101,7 +159,6 @@ class ClientController extends AbstractController
                 'message' => $e->getMessage()
             ], 400);
         }
-
     }
 
     /**
@@ -116,6 +173,10 @@ class ClientController extends AbstractController
      *     description="Retourne 'Utilisateur supprimé'",
      * )
      * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     *)
+     * @OA\Response(
      *     response=404,
      *     description="Retourne 'Utilisateur avec l\'Id: ID, non trouvé', ou 'Route non trouvé si pas d\'ID'",
      * )
@@ -124,6 +185,14 @@ class ClientController extends AbstractController
      */
     public function deleteUser($id, ManagerRegistry $doctrine): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            return $response;
+        }
         $repoUser = $doctrine->getRepository(Users::class);
         $user = $repoUser->find($id);
 
@@ -148,6 +217,22 @@ class ClientController extends AbstractController
      * @OA\Put(
      *      summary="Editer un utilisateur",
      * )
+     * @OA\Response(
+     *     response=201,
+     *     description="Utilisateur modifié avec succès",
+     * )
+     * @OA\Response(
+     *     response=400,
+     *     description="Erreurs de Syntaxe, ou erreurs SQL",
+     * )
+     * @OA\Response(
+     *     response=401,
+     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     * )
+     * @OA\Response(
+     *     response=404,
+     *     description= "Utilisateur avec l'Id: ID, non trouvé",
+     * )
      * 
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
@@ -155,6 +240,14 @@ class ClientController extends AbstractController
     public function editUser($id, Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine,
     EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            return $response;
+        }
         $repoUser = $doctrine->getRepository(Users::class);
         $user = $repoUser->find($id);
  
@@ -205,7 +298,5 @@ class ClientController extends AbstractController
                 'message' => $e->getMessage()
             ], 400);
         }
-
     }
-
 }
