@@ -18,6 +18,21 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class ClientController extends AbstractController
 {
+    public function verif(): ?Response
+    {
+        
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_ADMIN');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification et Rôle Administrateur requis', 401, [],[]);
+            return $response;
+        }
+        
+        return null;
+    }
+
     /**
      * 
      * @OA\Tag(name="Client")
@@ -41,19 +56,15 @@ class ClientController extends AbstractController
      */
     public function showAllUser(UsersRepository $usersRepository): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_ADMIN');
-
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
-            return $response;
-        }
-        $product = $usersRepository->findAll();
+            if(!$this->verif()) {
+                $product = $usersRepository->findAll();
+                
+                $response = $this->json($product, 200, [],[]);
         
-        $response = $this->json($product, 200, [],[]);
-
-        return $response;
+                return $response;
+                }
+        
+                return $this->verif();
     }
 
     /**
@@ -75,23 +86,24 @@ class ClientController extends AbstractController
      *     description="Retourn utilisateur non trouvé, ou pas de route si l'Id n'est pas donné",
      *)
      * 
-     * @Route("/api/user/{id}", name="app_user", methods={"GET"})
+     * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
      */
     public function showOneUser($id, UsersRepository $UsersRepository): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_ADMIN');
+        if(!$this->verif()) {
+        $user = $UsersRepository->find($id);
+        if (!$user){
+            $response = $this->json($user, 404, [],[]);
 
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
-            return $response;
+            return $response;            
         }
-        $product = $UsersRepository->find($id);
         
-        $response = $this->json($product, 200, [],[]);
+        $response = $this->json($user, 200, [],[]);
 
         return $response;
+        }
+
+        return $this->verif();
     }
 
     /**
@@ -100,6 +112,7 @@ class ClientController extends AbstractController
      * @OA\Post(
      *      summary="Ajout d'un utilisateur",
      * )
+     * 
      * @OA\Response(
      *     response=201,
      *     description="Utilisateur ajouté avec succès",
@@ -118,47 +131,43 @@ class ClientController extends AbstractController
     public function addUser(Request $request, SerializerInterface $serializer, 
     EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_ADMIN');
+        if(!$this->verif()) {
+            // Obtenir les informations saisies
+            $jsonRecu = $request->getContent();
 
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+            try{
+
+            // Deserializer les informations
+            $user = $serializer->deserialize($jsonRecu, Users::class, 'json');
+
+            $errors = $validator->validate($user);
+
+            if (count($errors) > 0) {
+                return $this->json($errors, 400);
+            }
+
+            // encoder le mot de pass
+            $encoded = $encoder->hashPassword($user, $user->getPassword());
+            $user->setPassword($encoded);
+
+            // enregistrer dans la BD
+            $em->persist($user);
+            $em->flush();
+
+            // Envoyer la reponse (cas  valide)
+            $response = $this->json('Utilisateur ajouté avec succès', 201, [],[]);
+
             return $response;
+
+            } catch(\Exception $e) {
+                return $this->json([
+                    'status' => 400,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
         }
-        // Obtenir les informations saisies
-        $jsonRecu = $request->getContent();
-
-        try{
-
-        // Deserializer les informations
-        $user = $serializer->deserialize($jsonRecu, Users::class, 'json');
-
-        $errors = $validator->validate($user);
-
-        if (count($errors) > 0) {
-            return $this->json($errors, 400);
-        }
-
-        // encoder le mot de pass
-        $encoded = $encoder->hashPassword($user, $user->getPassword());
-        $user->setPassword($encoded);
-
-        // enregistrer dans la BD
-        $em->persist($user);
-        $em->flush();
-
-        // Envoyer la reponse (cas  valide)
-        $response = $this->json('Utilisateur ajouté avec succès', 201, [],[]);
-
-        return $response;
-
-        } catch(\Exception $e) {
-            return $this->json([
-                'status' => 400,
-                'message' => $e->getMessage()
-            ], 400);
-        }
+        
+        return $this->verif();       
     }
 
     /**
@@ -181,34 +190,30 @@ class ClientController extends AbstractController
      *     description="Retourne 'Utilisateur avec l\'Id: ID, non trouvé', ou 'Route non trouvé si pas d\'ID'",
      * )
      * 
-     * @Route("/api/user/delete/{id}", name="app_user", methods={"DELETE"})
+     * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
      */
     public function deleteUser($id, ManagerRegistry $doctrine): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_ADMIN');
+        if(!$this->verif()) {
+            $repoUser = $doctrine->getRepository(Users::class);
+            $user = $repoUser->find($id);
 
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
-            return $response;
-        }
-        $repoUser = $doctrine->getRepository(Users::class);
-        $user = $repoUser->find($id);
+            if ($user) {
+                $em = $doctrine->getManager();
+                $em->remove($user);
+                $em->flush();
 
-        if ($user) {
-            $em = $doctrine->getManager();
-            $em->remove($user);
-            $em->flush();
+                $response = $this->json("Utilisateur supprimé", 200, [],[]);
 
-            $response = $this->json("Utilisateur supprimé", 200, [],[]);
+                return $response;
+            }
+            
+            $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
 
             return $response;
         }
-        
-        $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
-
-        return $response;
+            
+        return $this->verif();
     }
 
     /**
@@ -240,63 +245,59 @@ class ClientController extends AbstractController
     public function editUser($id, Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine,
     EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_ADMIN');
+        if(!$this->verif()) {
+            $repoUser = $doctrine->getRepository(Users::class);
+            $user = $repoUser->find($id);
+    
+            // Utilisateur non trouvé
+            
+            if (!$user) {
 
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification et Rôle  Administrateur requis', 401, [],[]);
+                $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
+                return $response;
+            }
+
+            // Utilisateur trouvé
+            // Obtenir les informations saisies
+            $jsonRecu = $request->getContent();
+
+            try{
+
+            // Deserializer les informations
+            $usermodified = $serializer->deserialize($jsonRecu, Users::class, 'json');
+            // dd($usermodified->getEmail());
+
+            $errors = $validator->validate($usermodified);
+
+            if (count($errors) > 0) {
+                return $this->json($errors, 400);
+            }
+
+            // encoder le mot de pass
+            $encoded = $encoder->hashPassword($usermodified, $usermodified->getPassword());
+            // var_dump($user, $usermodified);
+            $user->setPassword($encoded);
+            $user->setEmail($usermodified->getEmail());
+
+
+
+            // enregistrer dans la BD
+            $em->persist($user);
+            $em->flush();
+
+            // Envoyer la reponse (cas  valide)
+            $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
+
             return $response;
-        }
-        $repoUser = $doctrine->getRepository(Users::class);
-        $user = $repoUser->find($id);
- 
-        // Utilisateur non trouvé
-        
-        if (!$user) {
 
-            $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
-            return $response;
+            } catch(\Exception $e) {
+                return $this->json([
+                    'status' => 400,
+                    'message' => $e->getMessage()
+                ], 400);
+            }
         }
 
-        // Utilisateur trouvé
-        // Obtenir les informations saisies
-        $jsonRecu = $request->getContent();
-
-        try{
-
-        // Deserializer les informations
-        $usermodified = $serializer->deserialize($jsonRecu, Users::class, 'json');
-        // dd($usermodified->getEmail());
-
-        $errors = $validator->validate($usermodified);
-
-        if (count($errors) > 0) {
-            return $this->json($errors, 400);
-        }
-
-        // encoder le mot de pass
-        $encoded = $encoder->hashPassword($usermodified, $usermodified->getPassword());
-        // var_dump($user, $usermodified);
-        $user->setPassword($encoded);
-        $user->setEmail($usermodified->getEmail());
-
-
-
-        // enregistrer dans la BD
-        $em->persist($user);
-        $em->flush();
-
-        // Envoyer la reponse (cas  valide)
-        $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
-
-        return $response;
-
-        } catch(\Exception $e) {
-            return $this->json([
-                'status' => 400,
-                'message' => $e->getMessage()
-            ], 400);
-        }
+        return $this->verif();
     }
 }
