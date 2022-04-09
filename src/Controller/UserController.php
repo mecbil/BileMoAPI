@@ -10,6 +10,21 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class UserController extends AbstractController
 {
+    public function verif(): ?Response
+    {
+        
+        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        ->isGranted('ROLE_USER');
+
+        if (!$isFullyAuthenticated) {
+            // throw new AccessDeniedException();
+            $response = $this->json('Unauthorized: Authentification requise', 401, [],[]);
+            return $response;
+        }
+        
+        return null;
+    }
+
     /**
      * 
      * @OA\Tag(name="Utilisateur")
@@ -33,19 +48,16 @@ class UserController extends AbstractController
      */
     public function showAllProduct(ProductsRepository $productsRepository): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_USER');
-
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification requise', 401, [],[]);
+        // dd($this->verif());
+        if(!$this->verif()) {
+            $product = $productsRepository->findAll();
+        
+            $response = $this->json($product, 200, [],[]);
+    
             return $response;
         }
-        $product = $productsRepository->findAll();
-        
-        $response = $this->json($product, 200, [],[]);
 
-        return $response;
+        return $this->verif();
     }
 
     /**
@@ -72,29 +84,22 @@ class UserController extends AbstractController
      */
     public function sowOneProduct($id, ProductsRepository $product): Response
     {
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
-        ->isGranted('ROLE_USER');
+        if(!$this->verif()) {
 
-        if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
-            $response = $this->json('Unauthorized: Authentification requise', 401, [],[]);
+            $product = $product->find($id);
+
+            if ($product) {
+
+                $response = $this->json($product, 200, [],[]);
+
+                return $response;
+            }
+
+            
+            $response = $this->json('Produit avec l\'Id:'.$id.' non trouvé', 404, [],[]);
             return $response;
         }
-        $product = $product->find($id);
 
-        if ($product) {
-
-            $response = $this->json($product, 200, [],[]);
-
-            return $response;
-        }
-
-        
-        $response = $this->json('Produit avec l\'Id:'.$id.' non trouvé', 404, [],[]);
-
-        return $response;
-        
-
+        return $this->verif();       
     }
-
 }
