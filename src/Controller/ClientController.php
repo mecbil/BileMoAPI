@@ -19,13 +19,11 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 class ClientController extends AbstractController
 {
     public function verif(): ?Response
-    {
-        
+    {       
         $isFullyAuthenticated = $this->get('security.authorization_checker')
         ->isGranted('ROLE_ADMIN');
 
         if (!$isFullyAuthenticated) {
-            // throw new AccessDeniedException();
             $response = $this->json('Unauthorized: Authentification et Rôle Administrateur requis', 401, [],[]);
             return $response;
         }
@@ -91,16 +89,16 @@ class ClientController extends AbstractController
     public function showOneUser($id, UsersRepository $UsersRepository): Response
     {
         if(!$this->verif()) {
-        $user = $UsersRepository->find($id);
-        if (!$user){
-            $response = $this->json($user, 404, [],[]);
+            $user = $UsersRepository->find($id);
+            if (!$user){
+                $response = $this->json($user, 404, [],[]);
 
-            return $response;            
-        }
-        
-        $response = $this->json($user, 200, [],[]);
+                return $response;            
+            }
+            
+            $response = $this->json($user, 200, [],[]);
 
-        return $response;
+            return $response;
         }
 
         return $this->verif();
@@ -239,7 +237,6 @@ class ClientController extends AbstractController
      *     description= "Utilisateur avec l'Id: ID, non trouvé",
      * )
      * 
-     * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
     public function editUser($id, Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine,
@@ -249,10 +246,8 @@ class ClientController extends AbstractController
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
     
-            // Utilisateur non trouvé
-            
+            // Utilisateur non trouvé           
             if (!$user) {
-
                 $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
                 return $response;
             }
@@ -262,10 +257,8 @@ class ClientController extends AbstractController
             $jsonRecu = $request->getContent();
 
             try{
-
             // Deserializer les informations
             $usermodified = $serializer->deserialize($jsonRecu, Users::class, 'json');
-            // dd($usermodified->getEmail());
 
             $errors = $validator->validate($usermodified);
 
@@ -275,11 +268,8 @@ class ClientController extends AbstractController
 
             // encoder le mot de pass
             $encoded = $encoder->hashPassword($usermodified, $usermodified->getPassword());
-            // var_dump($user, $usermodified);
             $user->setPassword($encoded);
             $user->setEmail($usermodified->getEmail());
-
-
 
             // enregistrer dans la BD
             $em->persist($user);
@@ -297,7 +287,7 @@ class ClientController extends AbstractController
                 ], 400);
             }
         }
-
+        
         return $this->verif();
     }
 }
