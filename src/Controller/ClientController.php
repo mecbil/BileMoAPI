@@ -54,15 +54,15 @@ class ClientController extends AbstractController
      */
     public function showAllUser(UsersRepository $usersRepository): Response
     {
-        if(!$this->verif()) {
-            $product = $usersRepository->findAll();
-            
-            $response = $this->json($product, 200, [],[]);
-    
-            return $response;
-            }
-    
-        return $this->verif();
+            if(!$this->verif()) {
+                $product = $usersRepository->findAll();
+                
+                $response = $this->json($product, 200, [],[]);
+        
+                return $response;
+                }
+        
+                return $this->verif();
     }
 
     /**
