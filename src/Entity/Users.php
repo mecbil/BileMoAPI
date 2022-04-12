@@ -48,6 +48,13 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $password;
 
+    /**
+     * @ORM\ManyToOne(targetEntity=Clients::class)
+     * @ORM\JoinColumn(nullable=false)
+     * @Assert\NotBlank(message = "Veuillez compléter ce champ.")
+     */
+    private $client;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -128,5 +135,17 @@ class Users implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public function getClient(): ?Clients
+    {
+        return $this->client;
+    }
+
+    public function setClient(?Clients $client): self
+    {
+        $this->client = $client;
+
+        return $this;
     }
 }
