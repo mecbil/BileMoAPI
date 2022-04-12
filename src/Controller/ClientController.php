@@ -4,20 +4,34 @@ namespace App\Controller;
 
 use App\Entity\Users;
 use OpenApi\Annotations as OA;
-use Doctrine\ORM\EntityManager;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\Id;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class ClientController extends AbstractController
 {
+    private $serializer;
+    private $em;
+    private $encoder;
+    private $validator;
+
+    public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, 
+    UserPasswordHasherInterface $encoder, ValidatorInterface $validator) {
+        $this->serializer = $serializer;
+        $this->em = $em;
+        $this->encoder = $encoder;
+        $this->validator = $validator;
+    }
     public function verif(): ?Response
     {       
         $isFullyAuthenticated = $this->get('security.authorization_checker')
@@ -52,16 +66,18 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(UsersRepository $usersRepository): Response
+    public function showAllUser(UsersRepository $usersRepository, UserInterface $clientId = null): Response
     {
+        
             if(!$this->verif()) {
+                
                 $product = $usersRepository->findAll();
                 
                 $response = $this->json($product, 200, [],[]);
-        
+                
                 return $response;
                 }
-        
+                dd( $this->verif());
                 return $this->verif();
     }
 
@@ -86,7 +102,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
      */
-    public function showOneUser($id, UsersRepository $UsersRepository): Response
+    public function showOneUser(int $id, UsersRepository $UsersRepository): Response
     {
         if(!$this->verif()) {
             $user = $UsersRepository->find($id);
@@ -126,31 +142,30 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
-    public function addUser(Request $request, SerializerInterface $serializer, 
-    EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
+    public function addUser(Request $request): Response
     {
-        if(!$this->verif()) {
+        // if(!$this->verif()) {
             // Obtenir les informations saisies
             $jsonRecu = $request->getContent();
 
             try{
 
             // Deserializer les informations
-            $user = $serializer->deserialize($jsonRecu, Users::class, 'json');
-
-            $errors = $validator->validate($user);
+            $user = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
+            // Gestion des erreurs SQL
+            $errors = $this->validator->validate($user);
 
             if (count($errors) > 0) {
                 return $this->json($errors, 400);
             }
 
             // encoder le mot de pass
-            $encoded = $encoder->hashPassword($user, $user->getPassword());
+            $encoded = $this->encoder->hashPassword($user, $user->getPassword());
             $user->setPassword($encoded);
 
             // enregistrer dans la BD
-            $em->persist($user);
-            $em->flush();
+            $this->em->persist($user);
+            $this->em->flush();
 
             // Envoyer la reponse (cas  valide)
             $response = $this->json('Utilisateur ajouté avec succès', 201, [],[]);
@@ -163,9 +178,9 @@ class ClientController extends AbstractController
                     'message' => $e->getMessage()
                 ], 400);
             }
-        }
+        // }
         
-        return $this->verif();       
+        // return $this->verif();       
     }
 
     /**
@@ -190,7 +205,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
      */
-    public function deleteUser($id, ManagerRegistry $doctrine): Response
+    public function deleteUser(int $id, ManagerRegistry $doctrine): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
@@ -239,8 +254,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
-    public function editUser($id, Request $request, SerializerInterface $serializer, ManagerRegistry $doctrine,
-    EntityManagerInterface $em, UserPasswordHasherInterface $encoder, ValidatorInterface $validator): Response
+    public function editUser(int $id, Request $request, ManagerRegistry $doctrine): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
@@ -258,22 +272,22 @@ class ClientController extends AbstractController
 
             try{
             // Deserializer les informations
-            $usermodified = $serializer->deserialize($jsonRecu, Users::class, 'json');
+            $usermodified = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
 
-            $errors = $validator->validate($usermodified);
+            $errors = $this->validator->validate($usermodified);
 
             if (count($errors) > 0) {
                 return $this->json($errors, 400);
             }
 
             // encoder le mot de pass
-            $encoded = $encoder->hashPassword($usermodified, $usermodified->getPassword());
+            $encoded = $this->encoder->hashPassword($usermodified, $usermodified->getPassword());
             $user->setPassword($encoded);
             $user->setEmail($usermodified->getEmail());
 
             // enregistrer dans la BD
-            $em->persist($user);
-            $em->flush();
+            $this->em->persist($user);
+            $this->em->flush();
 
             // Envoyer la reponse (cas  valide)
             $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
