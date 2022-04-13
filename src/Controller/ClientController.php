@@ -66,19 +66,17 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(UsersRepository $usersRepository, UserInterface $clientId = null): Response
+    public function showAllUser(UsersRepository $usersRepository, UserInterface $client = null): Response
     {
-        
             if(!$this->verif()) {
                 
-                $product = $usersRepository->findAll();
+                $product = $usersRepository->findAllUsers($client);
                 
                 $response = $this->json($product, 200, [],[]);
                 
                 return $response;
                 }
-                dd( $this->verif());
-                return $this->verif();
+            return $this->verif();
     }
 
     /**
@@ -102,12 +100,13 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
      */
-    public function showOneUser(int $id, UsersRepository $UsersRepository): Response
+    public function showOneUser(int $id, UsersRepository $UsersRepository, UserInterface $client): Response
     {
         if(!$this->verif()) {
             $user = $UsersRepository->find($id);
-            if (!$user){
-                $response = $this->json($user, 404, [],[]);
+            // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
+            if (!$user || ($user->getClient()!==$client)){
+                $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
 
                 return $response;            
             }
@@ -142,16 +141,18 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
-    public function addUser(Request $request): Response
+    public function addUser(Request $request, UserInterface $client): Response
     {
-        // if(!$this->verif()) {
+        if(!$this->verif()) {
             // Obtenir les informations saisies
             $jsonRecu = $request->getContent();
-
+            
             try{
 
             // Deserializer les informations
             $user = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
+            $user->setClient($client);
+
             // Gestion des erreurs SQL
             $errors = $this->validator->validate($user);
 
@@ -162,6 +163,7 @@ class ClientController extends AbstractController
             // encoder le mot de pass
             $encoded = $this->encoder->hashPassword($user, $user->getPassword());
             $user->setPassword($encoded);
+            
 
             // enregistrer dans la BD
             $this->em->persist($user);
@@ -178,9 +180,9 @@ class ClientController extends AbstractController
                     'message' => $e->getMessage()
                 ], 400);
             }
-        // }
+        }
         
-        // return $this->verif();       
+        return $this->verif();       
     }
 
     /**
@@ -205,13 +207,13 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
      */
-    public function deleteUser(int $id, ManagerRegistry $doctrine): Response
+    public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
-
-            if ($user) {
+            // Utilisateur lié à un client trouvé;
+            if ($user && ($user->getClient()==$client)) {
                 $em = $doctrine->getManager();
                 $em->remove($user);
                 $em->flush();
@@ -220,7 +222,7 @@ class ClientController extends AbstractController
 
                 return $response;
             }
-            
+            // Utilisateur NON trouvé OU n'est pas lié à ce client;
             $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
 
             return $response;
@@ -254,26 +256,26 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
-    public function editUser(int $id, Request $request, ManagerRegistry $doctrine): Response
+    public function editUser(int $id, Request $request, ManagerRegistry $doctrine,  UserInterface $client): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
-    
+
             // Utilisateur non trouvé           
-            if (!$user) {
+            if (!$user || ($user->getClient()!==$client)) {
                 $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
                 return $response;
             }
 
-            // Utilisateur trouvé
-            // Obtenir les informations saisies
+            // Utilisateur trouvé - Obtenir les informations saisies
             $jsonRecu = $request->getContent();
 
             try{
             // Deserializer les informations
             $usermodified = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
-
+            // reprendre l'ID de l'Admin
+            $usermodified->setClient($user->getClient());
             $errors = $this->validator->validate($usermodified);
 
             if (count($errors) > 0) {
@@ -282,6 +284,7 @@ class ClientController extends AbstractController
 
             // encoder le mot de pass
             $encoded = $this->encoder->hashPassword($usermodified, $usermodified->getPassword());
+
             $user->setPassword($encoded);
             $user->setEmail($usermodified->getEmail());
 
