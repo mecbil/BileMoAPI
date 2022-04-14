@@ -17,6 +17,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 
 class ClientController extends AbstractController
 {
@@ -66,16 +67,24 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(UsersRepository $usersRepository, UserInterface $client = null): Response
+    public function showAllUser(UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
     {
             if(!$this->verif()) {
-                
-                $product = $usersRepository->findAllUsers($client);
-                
-                $response = $this->json($product, 200, [],[]);
-                
+                //Mise en cache des utilisateur trouvés
+                $users = $cache->get('usersFind', function() use($usersRepository, $client){
+                    return $usersRepository->findAllUsers($client);
+                });
+                // Aucun utilisateur trouvé
+                if (!$users) {
+
+                    $response = $this->json('Aucun utilisateur trouvé', 200, [],[]);
+                    return $response;
+                }
+                // envoi la liste des utilisateurs en json
+                $response = $this->json($users, 200, [],[]);
                 return $response;
                 }
+            // Utilisateur non connecté ou pas ADMIN   
             return $this->verif();
     }
 
@@ -100,22 +109,25 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
      */
-    public function showOneUser(int $id, UsersRepository $UsersRepository, UserInterface $client): Response
+    public function showOneUser(int $id, UsersRepository $UsersRepository, UserInterface $client, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
-            $user = $UsersRepository->find($id);
-            // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
-            if (!$user || ($user->getClient()!==$client)){
-                $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
+            //Mise en cache de l'utilisateur trouvé
+            $user = $cache->get('userFind'.$id, function() use($UsersRepository, $id){
+                return $UsersRepository->find($id);
+            });
 
+            // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
+            if (!$user || ($user->getClient() != $client)){
+
+                $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
                 return $response;            
             }
-            
+            // envoi le détail d'un utilisateur
             $response = $this->json($user, 200, [],[]);
-
             return $response;
         }
-
+        // Utilisateur non connecté ou pas ADMIN
         return $this->verif();
     }
 
@@ -141,7 +153,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
-    public function addUser(Request $request, UserInterface $client): Response
+    public function addUser(Request $request, UserInterface $client, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
             // Obtenir les informations saisies
@@ -168,10 +180,11 @@ class ClientController extends AbstractController
             // enregistrer dans la BD
             $this->em->persist($user);
             $this->em->flush();
+            // On supprime le cache liste des utilisateurs
+            $cache->delete('usersFind');
 
             // Envoyer la reponse (cas  valide)
             $response = $this->json('Utilisateur ajouté avec succès', 201, [],[]);
-
             return $response;
 
             } catch(\Exception $e) {
@@ -181,7 +194,7 @@ class ClientController extends AbstractController
                 ], 400);
             }
         }
-        
+        // Utilisateur non connecté ou pas ADMIN
         return $this->verif();       
     }
 
@@ -199,7 +212,7 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=401,
      *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
-     *)
+     * )
      * @OA\Response(
      *     response=404,
      *     description="Retourne 'Utilisateur avec l\'Id: ID, non trouvé', ou 'Route non trouvé si pas d\'ID'",
@@ -207,7 +220,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
      */
-    public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client): Response
+    public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
@@ -217,17 +230,18 @@ class ClientController extends AbstractController
                 $em = $doctrine->getManager();
                 $em->remove($user);
                 $em->flush();
+                // On supprime le cache liste des utilisateurs
+                $cache->delete('usersFind');
 
+                // On envoi la réponse
                 $response = $this->json("Utilisateur supprimé", 200, [],[]);
-
                 return $response;
             }
             // Utilisateur NON trouvé OU n'est pas lié à ce client;
             $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
-
             return $response;
         }
-            
+        // Utilisateur non connecté ou pas ADMIN
         return $this->verif();
     }
 
@@ -256,7 +270,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
-    public function editUser(int $id, Request $request, ManagerRegistry $doctrine,  UserInterface $client): Response
+    public function editUser(int $id, Request $request, ManagerRegistry $doctrine,  UserInterface $client, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
@@ -291,6 +305,9 @@ class ClientController extends AbstractController
             // enregistrer dans la BD
             $this->em->persist($user);
             $this->em->flush();
+            // On supprime le cache liste des utilisateurs et le cache utilisateur ID
+            $cache->delete('usersFind');
+            $cache->delete('userFind'.$id);
 
             // Envoyer la reponse (cas  valide)
             $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
@@ -304,7 +321,7 @@ class ClientController extends AbstractController
                 ], 400);
             }
         }
-        
+        // Utilisateur non connecté ou pas ADMIN
         return $this->verif();
     }
 }
