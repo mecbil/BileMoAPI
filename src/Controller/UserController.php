@@ -60,7 +60,7 @@ class UserController extends AbstractController
                 return $response;
             }
             // envoi la liste des produits en json
-            $response = $this->json($products, 200, [],[]);   
+            $response = $this->json($products, 200, [],['groups' => 'product:list']); 
             return $response;
         }
         // Utilisateur non connecté
@@ -100,7 +100,7 @@ class UserController extends AbstractController
 
             if ($product) {
                 // Envoi la liste des produits trouvé en json
-                $response = $this->json($product, 200, [],[]);
+                $response = $this->json($product, 200, [],['groups' => 'product:detail']);
                 return $response;
             }
             // Aucun produit trouvé            

@@ -2,8 +2,9 @@
 
 namespace App\Entity;
 
-use App\Repository\ProductsRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\ProductsRepository;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 /**
  * @ORM\Entity(repositoryClass=ProductsRepository::class)
@@ -14,31 +15,41 @@ class Products
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
+     * @Groups("product:list")
+     * @Groups("product:detail")
      */
     private $id;
 
     /**
      * @ORM\Column(type="text")
+     * @Groups("product:detail")
      */
     private $description;
 
     /**
      * @ORM\Column(type="string", length=45)
+     * @Groups("product:list")
+     * @Groups("product:detail")
      */
     private $color;
 
     /**
      * @ORM\Column(type="datetime")
+     * @Groups("product:detail")
      */
     private $createdAt;
 
     /**
      * @ORM\Column(type="string", length=100, nullable=true)
+     * @Groups("product:list")
+     * @Groups("product:detail")
      */
     private $brand;
 
     /**
      * @ORM\Column(type="string", length=255, nullable=true)
+     * @Groups("product:list")
+     * @Groups("product:detail")
      */
     private $featured_image;
 

@@ -81,7 +81,7 @@ class ClientController extends AbstractController
                     return $response;
                 }
                 // envoi la liste des utilisateurs en json
-                $response = $this->json($users, 200, [],[]);
+                $response = $this->json($users, 200, [],['groups' => 'user:list']);
                 return $response;
                 }
             // Utilisateur non connecté ou pas ADMIN   
@@ -124,7 +124,7 @@ class ClientController extends AbstractController
                 return $response;            
             }
             // envoi le détail d'un utilisateur
-            $response = $this->json($user, 200, [],[]);
+            $response = $this->json($user, 200, [],['groups' => 'user:detail']);
             return $response;
         }
         // Utilisateur non connecté ou pas ADMIN
@@ -184,7 +184,7 @@ class ClientController extends AbstractController
             $cache->delete('usersFind');
 
             // Envoyer la reponse (cas  valide)
-            $response = $this->json('Utilisateur ajouté avec succès', 201, [],[]);
+            $response = $this->json('Utilisateur ajouté avec succès\n'.$user, 201, [],['groups' => 'user:detail']);
             return $response;
 
             } catch(\Exception $e) {
@@ -310,7 +310,7 @@ class ClientController extends AbstractController
             $cache->delete('userFind'.$id);
 
             // Envoyer la reponse (cas  valide)
-            $response = $this->json('Utilisateur modifié avec succès', 201, [],[]);
+            $response = $this->json('Utilisateur modifié avec succès\n'.$user, 201, [],['groups' => 'user:detail']);
 
             return $response;
 
