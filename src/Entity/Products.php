@@ -53,6 +53,11 @@ class Products
      */
     private $featured_image;
 
+    /**
+     * @ORM\Column(type="string", length=50)
+     */
+    private $title;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -114,6 +119,18 @@ class Products
     public function setFeaturedImage(?string $featured_image): self
     {
         $this->featured_image = $featured_image;
+
+        return $this;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(string $title): self
+    {
+        $this->title = $title;
 
         return $this;
     }
