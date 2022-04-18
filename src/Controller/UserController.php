@@ -9,6 +9,13 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+/**
+ * @OA\Response(
+ *     response=401,
+ *     description="Unauthorized: Authentification requise",
+ *     @OA\JsonContent(default="Unauthorized: Authentification requise")
+ * )
+ */
 class UserController extends AbstractController
 {
     public function verif(): ?Response
@@ -36,15 +43,13 @@ class UserController extends AbstractController
      * @OA\Response(
      *     response=200,
      *     description="Retourne la liste des produits",
-     *)
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification requise",
-     *)
+     *     @OA\JsonContent(ref="#/components/schemas/Produit")
+     * )
      * @OA\Response(
      *     response=500,
-     *     description="Retourne une erreur serveur",
-     *)
+     *     description="Erreur serveur",
+     *     @OA\JsonContent(default="Erreur serveur")
+     * )
      * @Route("/api/products", name="app_products", methods={"GET"})
      */
     public function showAllProduct(ProductsRepository $productsRepository, CacheInterface $cache): Response
@@ -74,18 +79,15 @@ class UserController extends AbstractController
      * @OA\Get(
      *      summary="Détail d'un produit",
      * )
-     * 
      * @OA\Response(
      *     response=200,
      *     description="Retourne le détail d'un produit",
-     *)
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification requise",
+     *     @OA\JsonContent(ref="#/components/schemas/Produit_Detail")
      *)
      * @OA\Response(
      *     response=404,
      *     description="Retourn Produit non trouvé, ou pas de route si l'Id n'est pas donné",
+     *     @OA\JsonContent(default="Exemple: Produit non trouvé")
      *)
      * @Route("/api/product/{id}", name="app_product", methods={"GET"})
      */
@@ -94,7 +96,7 @@ class UserController extends AbstractController
         if(!$this->verif()) {
 
             //Mise en cache des produits trouvés
-            $product = $cache->get('usersFind', function() use($productrepo, $id){
+            $product = $cache->get('userFind', function() use($productrepo, $id){
                 return $productrepo->find($id);
             });
 

@@ -4,7 +4,6 @@ nelmio_api_doc:
             title: Bilemo API
             description: 'Projet 7 - OpenClassRooms: Créez un web service exposant une API'
             version: 1.0.0
-
         components:
             securitySchemes:
                 Google:
@@ -13,11 +12,51 @@ nelmio_api_doc:
                         authorizationCode:
                             scopes: {}
                             authorizationUrl: "/connect/google"
+            schemas:
+                Produit:
+                    properties:
+                        id:
+                            type: integer
+                        color:
+                            type: string
+                        brand:
+                            type: string
+                        featured_image:
+                            type: string
 
+                Produit_Detail:
+                    properties:
+                        Produit:
+                            $ref: '#/components/schemas/Produit'  
+                        createdAt:
+                            type: datetime
+                Utilisateur:
+                    properties:
+                        id:
+                            type: integer
+                        email:
+                            type: string
+                            format: email
+                Utilisateur_Detail:
+                    properties:
+                        Utilisateur:
+                            $ref: '#/components/schemas/Utilisateur' 
+                        password:
+                            type: string
+                            format: password
+                        Client:
+                            $ref: '#/components/schemas/Client'
+                Client:
+                    properties:
+                        id:
+                            type: integer
+                            format: email
+                        email:
+                            type: string
+                            format: email     
         security:
             - Google: []
 
-        
     areas: # to filter documented areas
         path_patterns:
             - /product

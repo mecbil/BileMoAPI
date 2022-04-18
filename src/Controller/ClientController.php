@@ -6,10 +6,8 @@ use App\Entity\Users;
 use OpenApi\Annotations as OA;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\Id;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Security\Core\Security;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -19,6 +17,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
+/**
+ * @OA\Response(
+ *     response=401,
+ *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+ *     @OA\JsonContent(default="Unauthorized: Authentification et Rôle  Administrateur requis")
+ * )
+ */
 class ClientController extends AbstractController
 {
     private $serializer;
@@ -39,8 +44,7 @@ class ClientController extends AbstractController
         ->isGranted('ROLE_ADMIN');
 
         if (!$isFullyAuthenticated) {
-            $response = $this->json('Unauthorized: Authentification et Rôle Administrateur requis', 401, [],[]);
-            return $response;
+            return $this->json(['status' => 401, 'message' => 'Unauthorized: Authentification et Rôle Administrateur requis'], 401);
         }
         
         return null;
@@ -55,14 +59,12 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=200,
      *     description="Retourne la liste des utilisateurs",
-     * )
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     *     @OA\JsonContent(ref="#/components/schemas/Utilisateur")
      * )
      * @OA\Response(
      *     response=500,
      *     description="Retourne une erreur serveur",
+     *     @OA\JsonContent(default="Retourne une erreur serveur")
      * )
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
@@ -76,12 +78,10 @@ class ClientController extends AbstractController
                 });
                 // Aucun utilisateur trouvé
                 if (!$users) {
-
-                    $response = $this->json('Aucun utilisateur trouvé', 200, [],[]);
-                    return $response;
+                    return $this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200);
                 }
                 // envoi la liste des utilisateurs en json
-                $response = $this->json($users, 200, [],['groups' => 'user:list']);
+                $response = $this->json(['Liste des utilisateurs',$users], 200, [],['groups' => 'user:list']);
                 return $response;
                 }
             // Utilisateur non connecté ou pas ADMIN   
@@ -97,14 +97,12 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=200,
      *     description="Retourne le détail d'un utilisateur",
+     *     @OA\JsonContent(ref="#/components/schemas/Utilisateur_Detail")
      * )
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
-     *)
      * @OA\Response(
      *     response=404,
      *     description="Retourn utilisateur non trouvé, ou pas de route si l'Id n'est pas donné",
+     *     @OA\JsonContent(default="Exemple: utilisateur non trouvé")
      *)
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
@@ -119,9 +117,7 @@ class ClientController extends AbstractController
 
             // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
             if (!$user || ($user->getClient() != $client)){
-
-                $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
-                return $response;            
+                return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);      
             }
             // envoi le détail d'un utilisateur
             $response = $this->json($user, 200, [],['groups' => 'user:detail']);
@@ -137,19 +133,29 @@ class ClientController extends AbstractController
      * @OA\Post(
      *      summary="Ajout d'un utilisateur",
      * )
+     * @OA\Parameter(
+     *     name="Utilisateur",
+     *     in="query",
+     *     description="Champs utilisateur a compléter",
+     *     required=true,
+     *     @OA\Schema(
+     *            type="object",
+     *            @OA\Property(property="email", type="string", format="email"),
+     *            @OA\Property(property="password", type="string", format="password")
+     *         )
+     *     )
+     * )
      * 
      * @OA\Response(
      *     response=201,
      *     description="Utilisateur ajouté avec succès",
+     *     @OA\JsonContent(ref="#/components/schemas/Utilisateur_Detail")
      * )
      * @OA\Response(
      *     response=400,
      *     description="Erreurs de Syntaxe, ou erreurs SQL",
+     *     @OA\JsonContent(default="Erreurs de Syntaxe, ou erreurs SQL")
      * )
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
-     *)
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
@@ -184,7 +190,7 @@ class ClientController extends AbstractController
             $cache->delete('usersFind');
 
             // Envoyer la reponse (cas  valide)
-            $response = $this->json('Utilisateur ajouté avec succès\n'.$user, 201, [],['groups' => 'user:detail']);
+            $response = $this->json($user, 201, [],['groups' => 'user:detail']);
             return $response;
 
             } catch(\Exception $e) {
@@ -210,12 +216,9 @@ class ClientController extends AbstractController
      *     description="Retourne 'Utilisateur supprimé'",
      * )
      * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
-     * )
-     * @OA\Response(
      *     response=404,
      *     description="Retourne 'Utilisateur avec l\'Id: ID, non trouvé', ou 'Route non trouvé si pas d\'ID'",
+     *     @OA\JsonContent(default="Exemple: Utilisateur avec l'Id: ID, non trouvé")
      * )
      * 
      * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
@@ -234,12 +237,10 @@ class ClientController extends AbstractController
                 $cache->delete('usersFind');
 
                 // On envoi la réponse
-                $response = $this->json("Utilisateur supprimé", 200, [],[]);
-                return $response;
+                return $this->json(['status' => 200, 'message' => 'Utilisateur supprimé'], 200);
             }
             // Utilisateur NON trouvé OU n'est pas lié à ce client;
-            $response = $this->json('Utilisateur avec l\'Id: '.$id.', non trouvé', 404, [],[]);
-            return $response;
+            return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
         }
         // Utilisateur non connecté ou pas ADMIN
         return $this->verif();
@@ -258,14 +259,13 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=400,
      *     description="Erreurs de Syntaxe, ou erreurs SQL",
-     * )
-     * @OA\Response(
-     *     response=401,
-     *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
+     *     @OA\JsonContent(default="Exemple: Erreurs de Syntaxe")
+     * 
      * )
      * @OA\Response(
      *     response=404,
      *     description= "Utilisateur avec l'Id: ID, non trouvé",
+     *     @OA\JsonContent(default="Exemple: Utilisateur avec l'Id: ID, non trouvé")
      * )
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
@@ -278,8 +278,7 @@ class ClientController extends AbstractController
 
             // Utilisateur non trouvé           
             if (!$user || ($user->getClient()!==$client)) {
-                $response = $this->json("Utilisateur avec l'Id: ".$id.", non trouvé", 404, [],[]);
-                return $response;
+                return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
             }
 
             // Utilisateur trouvé - Obtenir les informations saisies
@@ -310,7 +309,7 @@ class ClientController extends AbstractController
             $cache->delete('userFind'.$id);
 
             // Envoyer la reponse (cas  valide)
-            $response = $this->json('Utilisateur modifié avec succès\n'.$user, 201, [],['groups' => 'user:detail']);
+            $response = $this->json(['Utilisateur modifié avec succès', $user], 201, [],['groups' => 'user:detail']);
 
             return $response;
 
