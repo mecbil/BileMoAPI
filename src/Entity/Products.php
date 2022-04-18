@@ -21,6 +21,13 @@ class Products
     private $id;
 
     /**
+     * @ORM\Column(type="string", length=50)
+     * @Groups("product:list")
+     * @Groups("product:detail")
+     */
+    private $title;
+
+    /**
      * @ORM\Column(type="text")
      * @Groups("product:detail")
      */
@@ -52,11 +59,6 @@ class Products
      * @Groups("product:detail")
      */
     private $featured_image;
-
-    /**
-     * @ORM\Column(type="string", length=50)
-     */
-    private $title;
 
     public function getId(): ?int
     {

@@ -7,6 +7,8 @@ use OpenApi\Annotations as OA;
 use App\Repository\UsersRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Knp\Component\Pager\PaginatorInterface;
+use Symfony\Contracts\Cache\CacheInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -15,7 +17,6 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Contracts\Cache\CacheInterface;
 
 /**
  * @OA\Response(
@@ -61,6 +62,13 @@ class ClientController extends AbstractController
      *     description="Retourne la liste des utilisateurs",
      *     @OA\JsonContent(ref="#/components/schemas/Utilisateur")
      * )
+     * @OA\Parameter(
+     *     name="Page",
+     *     in="query",
+     *     description="Numéro de page",
+     *     required=false,
+     *     )
+     * )
      * @OA\Response(
      *     response=500,
      *     description="Retourne une erreur serveur",
@@ -69,7 +77,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
+    public function showAllUser(Request $request,PaginatorInterface $paginator,UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
     {
             if(!$this->verif()) {
                 //Mise en cache des utilisateur trouvés
@@ -81,7 +89,17 @@ class ClientController extends AbstractController
                     return $this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200);
                 }
                 // envoi la liste des utilisateurs en json
-                $response = $this->json(['Liste des utilisateurs',$users], 200, [],['groups' => 'user:list']);
+                $itemParPager = 3;
+                $currentPage = $request->query->getInt('Page', 1);
+                $nbPages = ceil(count($users)/$itemParPager);
+
+                $usersPagine = $paginator->paginate(
+                    $users,
+                    $currentPage,
+                    $itemParPager
+                );
+
+                $response = $this->json(['Page No: '.$currentPage.' sur : '.$nbPages, 'Liste des utilisateurs', $usersPagine], 200, [],['groups' => 'user:list']);
                 return $response;
                 }
             // Utilisateur non connecté ou pas ADMIN   
