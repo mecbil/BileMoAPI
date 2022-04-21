@@ -17,6 +17,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Security\Core\Security;
 
 /**
  * @OA\Response(
@@ -31,6 +32,7 @@ class ClientController extends AbstractController
     private $em;
     private $encoder;
     private $validator;
+    private $security;
 
     public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, 
     UserPasswordHasherInterface $encoder, ValidatorInterface $validator) {
@@ -56,10 +58,9 @@ class ClientController extends AbstractController
     /**
      * Utilisateur NON trouvé OU n'est pas lié à ce client
      */
-    private function exist($id, $user, $client):?Response {
-        // dd($this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200));
+    private function exist(int $id, $user):?Response {
 
-        if (!$user || ($user->getClient() != $client)){
+        if (!$user || ($user->getClient() != $this->getUser())){
             return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
         }
 
@@ -94,13 +95,13 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(Request $request, PaginatorInterface $paginator, UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
+    public function showAllUser(Request $request, PaginatorInterface $paginator, UsersRepository $usersRepository, CacheInterface $cache): Response
     {
             if($this->verif()) {
                 // Utilisateur non connecté ou pas ADMIN   
                 return $this->verif();
             }
-
+            $client = $this->getUser();
             //Mise en cache des utilisateur trouvés
             $users = $cache->get('usersFind', function() use($usersRepository, $client){
                 return $usersRepository->findAllUsers($client);
@@ -143,7 +144,7 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
      */
-    public function showOneUser(int $id, UsersRepository $UsersRepository, UserInterface $client, CacheInterface $cache): Response
+    public function showOneUser(int $id, UsersRepository $UsersRepository, CacheInterface $cache): Response
     {
         if($this->verif()) {
             // Utilisateur non connecté ou pas ADMIN
@@ -155,10 +156,7 @@ class ClientController extends AbstractController
         });
 
         // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
-       
-        return $this->exist($id, $user, $client);
-
-
+        return $this->exist($id, $user);
     }
 
     /**
@@ -304,14 +302,16 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
-    public function editUser(int $id, Request $request, UserInterface $client, ManagerRegistry $doctrine, CacheInterface $cache): Response
+    public function editUser(int $id, Request $request, ManagerRegistry $doctrine, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
-
+            $client = $this->getUser();
             // Utilisateur non trouvé           
-            $this->exist($id, $user, $client);
+            if (!$user || ($user->getClient() != $client)){
+                return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
+            }
 
             // Utilisateur trouvé - Obtenir les informations saisies
             $jsonRecu = $request->getContent();
