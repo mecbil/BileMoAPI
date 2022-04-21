@@ -39,9 +39,12 @@ class ClientController extends AbstractController
         $this->encoder = $encoder;
         $this->validator = $validator;
     }
-    public function verif(): ?Response
+    /**
+     * 
+     */
+    private function verif(): ?Response
     {       
-        $isFullyAuthenticated = $this->get('security.authorization_checker')
+        $isFullyAuthenticated = $this->container->get('security.authorization_checker')
         ->isGranted('ROLE_ADMIN');
 
         if (!$isFullyAuthenticated) {
@@ -49,6 +52,20 @@ class ClientController extends AbstractController
         }
         
         return null;
+    }
+    /**
+     * Utilisateur NON trouvé OU n'est pas lié à ce client
+     */
+    private function exist($id, $user, $client):?Response {
+        // dd($this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200));
+
+        if (!$user || ($user->getClient() != $client)){
+            return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
+        }
+
+        // envoi le détail d'un utilisateur
+        $response = $this->json($user, 200, [],['groups' => 'user:detail']);
+        return $response;
     }
 
     /**
@@ -77,33 +94,34 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/users/", name="app_users", methods={"GET"})
      */
-    public function showAllUser(Request $request,PaginatorInterface $paginator,UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
+    public function showAllUser(Request $request, PaginatorInterface $paginator, UsersRepository $usersRepository, UserInterface $client = null, CacheInterface $cache): Response
     {
-            if(!$this->verif()) {
-                //Mise en cache des utilisateur trouvés
-                $users = $cache->get('usersFind', function() use($usersRepository, $client){
-                    return $usersRepository->findAllUsers($client);
-                });
-                // Aucun utilisateur trouvé
-                if (!$users) {
-                    return $this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200);
-                }
-                // envoi la liste des utilisateurs en json
-                $itemParPager = 3;
-                $currentPage = $request->query->getInt('Page', 1);
-                $nbPages = ceil(count($users)/$itemParPager);
+            if($this->verif()) {
+                // Utilisateur non connecté ou pas ADMIN   
+                return $this->verif();
+            }
 
-                $usersPagine = $paginator->paginate(
-                    $users,
-                    $currentPage,
-                    $itemParPager
-                );
+            //Mise en cache des utilisateur trouvés
+            $users = $cache->get('usersFind', function() use($usersRepository, $client){
+                return $usersRepository->findAllUsers($client);
+            });
+            // Aucun utilisateur trouvé
+            if (!$users) {
+                return $this->json(['status' => 200, 'message' => 'Aucun utilisateur trouvé'], 200);
+            }
+            // envoi la liste des utilisateurs en json
+            $itemParPager = 3;
+            $currentPage = $request->query->getInt('Page', 1);
+            $nbPages = ceil(count($users)/$itemParPager);
 
-                $response = $this->json(['Page No: '.$currentPage.' sur : '.$nbPages, 'Liste des utilisateurs', $usersPagine], 200, [],['groups' => 'user:list']);
-                return $response;
-                }
-            // Utilisateur non connecté ou pas ADMIN   
-            return $this->verif();
+            $usersPagine = $paginator->paginate(
+                $users,
+                $currentPage,
+                $itemParPager
+            );
+
+            $response = $this->json(['Page No: '.$currentPage.' sur : '.$nbPages, 'Liste des utilisateurs', $usersPagine], 200, [],['groups' => 'user:list']);
+            return $response;  
     }
 
     /**
@@ -127,22 +145,20 @@ class ClientController extends AbstractController
      */
     public function showOneUser(int $id, UsersRepository $UsersRepository, UserInterface $client, CacheInterface $cache): Response
     {
-        if(!$this->verif()) {
-            //Mise en cache de l'utilisateur trouvé
-            $user = $cache->get('userFind'.$id, function() use($UsersRepository, $id){
-                return $UsersRepository->find($id);
-            });
-
-            // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
-            if (!$user || ($user->getClient() != $client)){
-                return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);      
-            }
-            // envoi le détail d'un utilisateur
-            $response = $this->json($user, 200, [],['groups' => 'user:detail']);
-            return $response;
+        if($this->verif()) {
+            // Utilisateur non connecté ou pas ADMIN
+            return $this->verif();
         }
-        // Utilisateur non connecté ou pas ADMIN
-        return $this->verif();
+        //Mise en cache de l'utilisateur trouvé
+        $user = $cache->get('userFind'.$id, function() use($UsersRepository, $id){
+            return $UsersRepository->find($id);
+        });
+
+        // L'utilisateur n'existe pas OU n'est pas un utilisateur lié à un client ;
+       
+        return $this->exist($id, $user, $client);
+
+
     }
 
     /**
@@ -288,16 +304,14 @@ class ClientController extends AbstractController
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})
      */
-    public function editUser(int $id, Request $request, ManagerRegistry $doctrine,  UserInterface $client, CacheInterface $cache): Response
+    public function editUser(int $id, Request $request, UserInterface $client, ManagerRegistry $doctrine, CacheInterface $cache): Response
     {
         if(!$this->verif()) {
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
 
             // Utilisateur non trouvé           
-            if (!$user || ($user->getClient()!==$client)) {
-                return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
-            }
+            $this->exist($id, $user, $client);
 
             // Utilisateur trouvé - Obtenir les informations saisies
             $jsonRecu = $request->getContent();
