@@ -81,7 +81,7 @@ class ClientController extends AbstractController
      *     @OA\JsonContent(ref="#/components/schemas/Utilisateur")
      * )
      * @OA\Parameter(
-     *     name="Page",
+     *     name="page",
      *     in="query",
      *     description="Numéro de page",
      *     required=false,
@@ -101,6 +101,7 @@ class ClientController extends AbstractController
                 // Utilisateur non connecté ou pas ADMIN   
                 return $this->verif();
             }
+
             $client = $this->getUser();
             //Mise en cache des utilisateur trouvés
             $users = $cache->get('usersFind', function() use($usersRepository, $client){
@@ -112,7 +113,7 @@ class ClientController extends AbstractController
             }
             // envoi la liste des utilisateurs en json
             $itemParPager = 3;
-            $currentPage = $request->query->getInt('Page', 1);
+            $currentPage = $request->query->getInt('page', 1);
             $nbPages = ceil(count($users)/$itemParPager);
 
             $usersPagine = $paginator->paginate(
@@ -257,25 +258,26 @@ class ClientController extends AbstractController
      */
     public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client, CacheInterface $cache): Response
     {
-        if(!$this->verif()) {
-            $repoUser = $doctrine->getRepository(Users::class);
-            $user = $repoUser->find($id);
-            // Utilisateur lié à un client trouvé;
-            if ($user && ($user->getClient()==$client)) {
-                $em = $doctrine->getManager();
-                $em->remove($user);
-                $em->flush();
-                // On supprime le cache liste des utilisateurs
-                $cache->delete('usersFind');
-
-                // On envoi la réponse
-                return $this->json(['status' => 200, 'message' => 'Utilisateur supprimé'], 200);
-            }
-            // Utilisateur NON trouvé OU n'est pas lié à ce client;
-            return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
+        if($this->verif()) {
+            // Utilisateur non connecté ou pas ADMIN   
+            return $this->verif();
         }
-        // Utilisateur non connecté ou pas ADMIN
-        return $this->verif();
+
+        $repoUser = $doctrine->getRepository(Users::class);
+        $user = $repoUser->find($id);
+        // Utilisateur lié à un client trouvé;
+        if ($user && ($user->getClient() == $client)) {
+            $em = $doctrine->getManager();
+            $em->remove($user);
+            $em->flush();
+            // On supprime le cache liste des utilisateurs
+            $cache->delete('usersFind');
+
+            // On envoi la réponse
+            return $this->json(['status' => 200, 'message' => 'Utilisateur supprimé'], 200);
+        }
+        // Utilisateur NON trouvé OU n'est pas lié à ce client;
+        return $this->json(['status' => 404, 'message' => 'Utilisateur avec l\'Id: '.$id.', non trouvé'], 404);
     }
 
     /**
@@ -304,7 +306,11 @@ class ClientController extends AbstractController
      */
     public function editUser(int $id, Request $request, ManagerRegistry $doctrine, CacheInterface $cache): Response
     {
-        if(!$this->verif()) {
+        if($this->verif()) {
+            // Utilisateur non connecté ou pas ADMIN   
+            return $this->verif();
+        }
+
             $repoUser = $doctrine->getRepository(Users::class);
             $user = $repoUser->find($id);
             $client = $this->getUser();
@@ -351,8 +357,5 @@ class ClientController extends AbstractController
                     'message' => $e->getMessage()
                 ], 400);
             }
-        }
-        // Utilisateur non connecté ou pas ADMIN
-        return $this->verif();
     }
 }
