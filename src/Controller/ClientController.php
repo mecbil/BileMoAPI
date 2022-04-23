@@ -17,13 +17,12 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Security\Core\Security;
 
 /**
  * @OA\Response(
  *     response=401,
  *     description="Unauthorized: Authentification et Rôle  Administrateur requis",
- *     @OA\JsonContent(default="Unauthorized: Authentification et Rôle  Administrateur requis")
+ *     @OA\JsonContent(default="Exemple: {'status': '401', 'message': 'Unauthorized: Authentification et Rôle  Administrateur requis'}")
  * )
  */
 class ClientController extends AbstractController
@@ -32,7 +31,6 @@ class ClientController extends AbstractController
     private $em;
     private $encoder;
     private $validator;
-    private $security;
 
     public function __construct(SerializerInterface $serializer, EntityManagerInterface $em, 
     UserPasswordHasherInterface $encoder, ValidatorInterface $validator) {
@@ -140,7 +138,7 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=404,
      *     description="Retourn utilisateur non trouvé, ou pas de route si l'Id n'est pas donné",
-     *     @OA\JsonContent(default="Exemple: utilisateur non trouvé")
+     *     @OA\JsonContent(default="Exemple: {'status': '404', 'message': 'Utilisateur avec l'Id: ID, non trouvé'}")
      *)
      * 
      * @Route("/api/user/{id}", name="app_user_one", methods={"GET"})
@@ -187,54 +185,54 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=400,
      *     description="Erreurs de Syntaxe, ou erreurs SQL",
-     *     @OA\JsonContent(default="Erreurs de Syntaxe, ou erreurs SQL")
+     *     @OA\JsonContent(default="Exemple: {'status': '400', 'message': 'Erreurs de Syntaxe'}")
      * )
      * 
      * @Route("/api/user/add", name="app_user_add", methods={"POST"})
      */
-    public function addUser(Request $request, UserInterface $client, CacheInterface $cache): Response
+    public function addUser(Request $request, UserInterface $client=null, CacheInterface $cache): Response
     {
-        if(!$this->verif()) {
-            // Obtenir les informations saisies
-            $jsonRecu = $request->getContent();
-            
-            try{
-
-            // Deserializer les informations
-            $user = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
-            $user->setClient($client);
-
-            // Gestion des erreurs SQL
-            $errors = $this->validator->validate($user);
-
-            if (count($errors) > 0) {
-                return $this->json($errors, 400);
-            }
-
-            // encoder le mot de pass
-            $encoded = $this->encoder->hashPassword($user, $user->getPassword());
-            $user->setPassword($encoded);
-            
-
-            // enregistrer dans la BD
-            $this->em->persist($user);
-            $this->em->flush();
-            // On supprime le cache liste des utilisateurs
-            $cache->delete('usersFind');
-
-            // Envoyer la reponse (cas  valide)
-            $response = $this->json($user, 201, [],['groups' => 'user:detail']);
-            return $response;
-
-            } catch(\Exception $e) {
-                return $this->json([
-                    'status' => 400,
-                    'message' => $e->getMessage()
-                ], 400);
-            }
+        if($this->verif()) {
+            // Utilisateur non connecté ou pas ADMIN
+            return $this->verif();
         }
-        // Utilisateur non connecté ou pas ADMIN
-        return $this->verif();       
+        // Obtenir les informations saisies
+        $jsonRecu = $request->getContent();
+        
+        try{
+
+        // Deserializer les informations
+        $user = $this->serializer->deserialize($jsonRecu, Users::class, 'json');
+        $user->setClient($client);
+
+        // Gestion des erreurs SQL
+        $errors = $this->validator->validate($user);
+
+        if (count($errors) > 0) {
+            return $this->json($errors, 400);
+        }
+
+        // encoder le mot de pass
+        $encoded = $this->encoder->hashPassword($user, $user->getPassword());
+        $user->setPassword($encoded);
+        
+
+        // enregistrer dans la BD
+        $this->em->persist($user);
+        $this->em->flush();
+        // On supprime le cache liste des utilisateurs
+        $cache->delete('usersFind');
+
+        // Envoyer la reponse (cas  valide)
+        $response = $this->json(['Utilisateur ajouté avec succès', $user], 201, [],['groups' => 'user:detail']);
+        return $response;
+
+        } catch(\Exception $e) {
+            return $this->json([
+                'status' => 400,
+                'message' => $e->getMessage()
+            ], 400);
+        }  
     }
 
     /**
@@ -251,12 +249,12 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=404,
      *     description="Retourne 'Utilisateur avec l\'Id: ID, non trouvé', ou 'Route non trouvé si pas d\'ID'",
-     *     @OA\JsonContent(default="Exemple: Utilisateur avec l'Id: ID, non trouvé")
+     *     @OA\JsonContent(default="Exemple: {'status': '404', 'message': 'Utilisateur avec l'Id: ID, non trouvé'}")
      * )
      * 
      * @Route("/api/user/delete/{id}", name="app_user_delete", methods={"DELETE"})
      */
-    public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client, CacheInterface $cache): Response
+    public function deleteUser(int $id, ManagerRegistry $doctrine, UserInterface $client=null, CacheInterface $cache): Response
     {
         if($this->verif()) {
             // Utilisateur non connecté ou pas ADMIN   
@@ -293,13 +291,13 @@ class ClientController extends AbstractController
      * @OA\Response(
      *     response=400,
      *     description="Erreurs de Syntaxe, ou erreurs SQL",
-     *     @OA\JsonContent(default="Exemple: Erreurs de Syntaxe")
+     *     @OA\JsonContent(default="Exemple: {'status': '400', 'message': 'Erreurs de Syntaxe'}")
      * 
      * )
      * @OA\Response(
      *     response=404,
      *     description= "Utilisateur avec l'Id: ID, non trouvé",
-     *     @OA\JsonContent(default="Exemple: Utilisateur avec l'Id: ID, non trouvé")
+     *     @OA\JsonContent(default="Exemple: {'status': '404', 'message': 'Utilisateur avec l'Id: ID, non trouvé'}")
      * )
      * 
      * @Route("/api/user/edit/{id}", name="app_user_edit", methods={"PUT"})

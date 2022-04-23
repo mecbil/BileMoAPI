@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1:3306
--- Généré le : lun. 18 avr. 2022 à 17:29
+-- Généré le : sam. 23 avr. 2022 à 09:57
 -- Version du serveur :  5.7.31
 -- Version de PHP : 7.3.21
 
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `UNIQ_1483A5E9E7927C74` (`email`),
   KEY `IDX_1483A5E919EB6921` (`client_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Déchargement des données de la table `users`
@@ -129,16 +129,17 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 INSERT INTO `users` (`id`, `email`, `password`, `client_id`) VALUES
 (1, 'mecjeux@yahoo.fr', '$2y$13$ZC9OPkwzR74HY0ciwpH4.u1H6ivxh.5ix1YMb4H3Xi6vc2dzJMXae', 1),
-(20, 'moi20@moi.fr', '$2y$13$IuAoPt2dh38Wz0V4AToV/ewWz/jkYsQSMot7iyKKdkxHqzb6Bv8j.', 1),
-(21, 'moi8@gmai.com', '$2y$13$XFGO19X3M06lvLYVQ9weve7rw2iXVLa2zApF0lkSgpVfHXeP7RuL.', 1),
-(22, 'moi10@gmail.com', '$2y$13$.YS4yVHcdCIUqVZFISc9xuQktihD9j9leXyIFTxt1SIqGIQuI68Cy', 1),
-(24, 'moi22@gmail.com', '$2y$13$9xQEMXgBsiJGuoxZpbNQYe6HmTqzrSuxYNzIFpps5uflKR5jH6doW', 1),
+(24, 'moi24@gmail.com', '$2y$13$tw7CGNJj7jVkbG5Qeu1zxOgxh7WJmZQF6G.L9zoxbc.s1kU.os4Ui', 1),
 (25, 'moi25@gmail.com', '$2y$13$jRrWuMlwV2ZJF8r7SSUQZOIeN110MN3YsDm77KCF6fist4k7sytrS', 2),
-(26, 'moi26@moi.fr', '$2y$13$JCuMdvT9xmBP/VI9HpLGm.bm8tnhC0WgDvw7ggY5D6COVVwEa2Q36', 1),
-(27, 'moi27@moi.fr', '$2y$13$176PLI0X68ENpHg2ljx3xuLc8igxcUqj4NU7Xap7kWqZhxLLFF1X2', 1),
-(28, 'moi28@moi.fr', '$2y$13$XmZcR/TLDo.iXiZEyp8Qwu9NEyntWg53QS9zdJD0THPvbmGMY4/eG', 1),
-(29, 'moi29@moi.fr', '$2y$13$CsvOAF3WlulLPppEBt9nHuPMyHePrbW35S1p1ua0D3JQgSfQtRSQe', 1),
-(30, 'moi30@moi.fr', '$2y$13$tlV5ATXhJlau8m28PstV4eg7DkvD.rwHiwY3B5Z6K2RWA3ujxwqXu', 1);
+(26, 'user26@example.com', '$2y$13$r7kGJ0WMwp.9V0NuGOpJVOYtq.7vO3d8Aup8VG5dElfqauealdg2K', 1),
+(27, 'user27@example.com', '$2y$13$dlpxql8Ha7PPu/IUH9KESevtq8tR5Jys.utbFf46wxihaW1cjyFZy', 1),
+(28, 'user28@example.com', '$2y$13$B3SBnqItx3n0xuNpQkiidOHI9ri5z3foebkohiBumR7P5hLc3Lx5i', 1),
+(29, 'user29@example.com', '$2y$13$sm2ZsRwtX5pb9V.QMvzIfe03yd3Ehd6WtMwjnEyfuwjwg0Okl5NdW', 1),
+(30, 'user30@example.com', '$2y$13$ucSBiGR9s2aw5b5/qdHUIOdvKkDvMJvLTzDohWvGhMtkobGrJ9xw6', 1),
+(31, 'user31@example.com', '$2y$13$vTcUvbMStpBknOr0.epkqusaLyQpFB5cMFWB2np8K/tlJdQ66UTzS', 1),
+(32, 'user32@example.com', '$2y$13$.2dQTT9DylVhKR.Mi1lVIeyxHP2kYhSQnEkp4HNARSKdSxUzBLw2S', 1),
+(33, 'user33@example.com', '$2y$13$6eZ5AvVeFyszaSsl57dQ8OMnwharNNWUTAbDdZ5XMrx5I/vcHqo7C', 1),
+(34, 'user34@example.com', '$2y$13$EnVQsx7zizUnEGPcTBm7puUL4kIzZPD2U81YmRpnY5Zo42xWETjLm', 1);
 
 --
 -- Contraintes pour les tables déchargées

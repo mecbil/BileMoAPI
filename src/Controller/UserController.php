@@ -15,7 +15,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
  * @OA\Response(
  *     response=401,
  *     description="Unauthorized: Authentification requise",
- *     @OA\JsonContent(default="Unauthorized: Authentification requise")
+ *     @OA\JsonContent(default="Exemple: {'status': '401', 'message': 'Unauthorized: Authentification requise'}")
  * )
  */
 class UserController extends AbstractController
@@ -107,7 +107,7 @@ class UserController extends AbstractController
      * @OA\Response(
      *     response=404,
      *     description="Retourn Produit non trouvé, ou pas de route si l'Id n'est pas donné",
-     *     @OA\JsonContent(default="Exemple: Produit non trouvé")
+     *     @OA\JsonContent(default="Exemple: {'status': '404', 'message': 'Produit avec l'Id:ID non trouvé'}")
      *)
      * @Route("/api/product/{id}", name="app_product", methods={"GET"})
      */
@@ -116,7 +116,7 @@ class UserController extends AbstractController
         if(!$this->verif()) {
 
             //Mise en cache des produits trouvés
-            $product = $cache->get('userFind', function() use($productrepo, $id){
+            $product = $cache->get('userFind'.$id, function() use($productrepo, $id){
                 return $productrepo->find($id);
             });
 
