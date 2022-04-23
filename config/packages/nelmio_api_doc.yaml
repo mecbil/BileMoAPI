@@ -17,7 +17,7 @@ nelmio_api_doc:
                     properties:
                         id:
                             type: integer
-                        color:
+                        title:
                             type: string
                         brand:
                             type: string
@@ -30,6 +30,8 @@ nelmio_api_doc:
                             $ref: '#/components/schemas/Produit'  
                         createdAt:
                             type: datetime
+                        color:
+                            type: string
                 Utilisateur:
                     properties:
                         id:
